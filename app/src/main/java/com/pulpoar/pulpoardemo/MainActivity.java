@@ -182,8 +182,8 @@ public class MainActivity extends AppCompatActivity {
                 File photoFile = null;
                 try {
                     String destination = Environment.getExternalStorageDirectory().getPath() + "/image.jpg";
-                    photoFile = createImageFile();
                     takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(new File(destination)));
+                    photoFile = createImageFile();
                     takePictureIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
                 } catch (IOException ex) {
                     // Error occurred while creating the File
@@ -191,7 +191,8 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 // Continue only if the File was successfully created.
-                // Uri.fromFile is not supported to access camera photos starting SDK 30 (Android R), use FileProvider to get Uri.
+                // Uri.fromFile is not supported to access camera photos,
+                // use FileProvider to get Uri starting SDK 30 (Android R).
                 if (photoFile != null) {
                     mCameraPhotoPath = "file:" + photoFile.getAbsolutePath();
                     Uri photoURI = FileProvider.getUriForFile(view.getContext(),  BuildConfig.APPLICATION_ID + ".provider", photoFile);
@@ -216,7 +217,6 @@ public class MainActivity extends AppCompatActivity {
             chooserIntent.putExtra(Intent.EXTRA_INTENT, contentSelectionIntent);
             chooserIntent.putExtra(Intent.EXTRA_TITLE, "Image Chooser");
             chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, intentArray);
-            setResult(Activity.RESULT_OK, chooserIntent);
             startActivityForResult(chooserIntent, INPUT_FILE_REQUEST_CODE);
 
             return true;
