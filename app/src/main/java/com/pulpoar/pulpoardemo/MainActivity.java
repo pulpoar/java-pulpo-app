@@ -191,8 +191,7 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 // Continue only if the File was successfully created.
-                // Uri.fromFile is not supported to access camera photos,
-                // use FileProvider to get Uri starting SDK 30 (Android R).
+                // Uri.fromFile is not supported to get camera photos starting SDK 30, use FileProvider instead.
                 if (photoFile != null) {
                     mCameraPhotoPath = "file:" + photoFile.getAbsolutePath();
                     Uri photoURI = FileProvider.getUriForFile(view.getContext(),  BuildConfig.APPLICATION_ID + ".provider", photoFile);
