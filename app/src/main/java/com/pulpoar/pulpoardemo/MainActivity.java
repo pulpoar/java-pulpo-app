@@ -19,12 +19,8 @@ import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.Toast;
 
-import androidx.activity.result.ActivityResult;
-import androidx.activity.result.ActivityResultCallback;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.activity.result.ActivityResultLauncher;
 import androidx.core.content.FileProvider;
 
 import java.io.File;
@@ -41,10 +37,6 @@ public class MainActivity extends AppCompatActivity {
     private Uri mCapturedImageURI = null;
     private ValueCallback<Uri[]> mFilePathCallback;
     private String mCameraPhotoPath;
-    ActivityResultLauncher<Intent> activityResultLauncher;
-    String currentPhotoPath;
-    String emre = " ++++++++++++++++++++++++++++++++ ";
-    String erdem = " ------------------------------- ";
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
@@ -70,43 +62,6 @@ public class MainActivity extends AppCompatActivity {
         mWebSettings.setAllowFileAccess(true);
         mWebSettings.setAllowContentAccess(true);
         mWebSettings.setSupportZoom(false);
-
-        activityResultLauncher =
-                registerForActivityResult(
-                        new ActivityResultContracts.StartActivityForResult(),
-                        new ActivityResultCallback<ActivityResult>() {
-                            @Override
-                            public void onActivityResult(ActivityResult activityResult) {
-                                int newResultCode = activityResult.getResultCode();
-                                Intent data = activityResult.getData();
-                                Log.i("oh yea", "newResultCode: " + newResultCode + " Activity.RESULT_OK: " + Activity.RESULT_OK);
-                                Log.i("data", ": " + data);
-                                Log.i("dataSTR", ": " + activityResult.getData());
-                                Uri[] results = null;
-
-                                // Check that the response is a good one
-                                if (newResultCode == Activity.RESULT_OK) {
-                                    if (data == null) {
-                                        Log.i("emre", "" + emre + " data: "  + data);
-                                        // If there is not data, then we may have taken a photo
-                                        if (mCameraPhotoPath != null) {
-                                            Log.i("emre", "" + emre + " mCameraPhotoPath: "  + mCameraPhotoPath);
-                                            results = new Uri[]{Uri.parse(mCameraPhotoPath)};
-                                        }
-                                    } else {
-                                        String dataString = data.getDataString();
-                                        Log.i("98", "" + emre + " datastring: "  + dataString);
-                                        if (dataString != null) {
-                                            results = new Uri[]{Uri.parse(dataString)};
-                                        }
-                                    }
-
-                                }
-                                mFilePathCallback.onReceiveValue(results);
-                                mFilePathCallback = null;
-                            }
-                        }
-                );
 
         mWebView.setWebViewClient(new WebViewClient() {
             @Override
@@ -141,15 +96,11 @@ public class MainActivity extends AppCompatActivity {
                 ".jpg",      /* suffix */
                 storageDir          /* directory */
         );
-        // Save a file: path for use with ACTION_VIEW intents
-        currentPhotoPath = imageFile.getAbsolutePath();
         return imageFile;
     }
-    /*
+
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        Log.i("message", " reqCode: " + requestCode + " resultCode: " + resultCode + " Activity.RESULT_OK: " + Activity.RESULT_OK);
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
 
             if (requestCode != INPUT_FILE_REQUEST_CODE || mFilePathCallback == null) {
@@ -162,15 +113,12 @@ public class MainActivity extends AppCompatActivity {
             // Check that the response is a good one
             if (resultCode == Activity.RESULT_OK) {
                 if (data == null) {
-                    Log.i("emre", "" + emre + " data: "  + data);
                     // If there is not data, then we may have taken a photo
                     if (mCameraPhotoPath != null) {
-                        Log.i("emre", "" + emre + " mCameraPhotoPath: "  + data);
                         results = new Uri[]{Uri.parse(mCameraPhotoPath)};
                     }
                 } else {
                     String dataString = data.getDataString();
-                    Log.i("emre", "" + emre + " datastring: "  + dataString);
                     if (dataString != null) {
                         results = new Uri[]{Uri.parse(dataString)};
                     }
@@ -218,7 +166,6 @@ public class MainActivity extends AppCompatActivity {
 
         return;
     }
-*/
 
     public class ChromeClient extends WebChromeClient {
 
@@ -236,7 +183,6 @@ public class MainActivity extends AppCompatActivity {
                 try {
                     String destination = Environment.getExternalStorageDirectory().getPath() + "/image.jpg";
                     photoFile = createImageFile();
-                    Log.i("photofile", "" + emre + "ok assign photofile " + Environment.getExternalStorageDirectory().getPath() + " new: " + currentPhotoPath + "destination: " + destination);
                     takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(new File(destination)));
                     takePictureIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
                 } catch (IOException ex) {
@@ -244,18 +190,14 @@ public class MainActivity extends AppCompatActivity {
                     Log.e(TAG, "Unable to create Image File", ex);
                 }
 
-                // Continue only if the File was successfully created
+                // Continue only if the File was successfully created.
+                // Uri.fromFile is not supported to access camera photos starting SDK 30 (Android R), use FileProvider to get Uri.
                 if (photoFile != null) {
-                    Log.i("199", "null değil " + erdem + photoFile.getAbsolutePath());
                     mCameraPhotoPath = "file:" + photoFile.getAbsolutePath();
-                    Uri newURI = FileProvider.getUriForFile(view.getContext(),  BuildConfig.APPLICATION_ID + ".provider", photoFile);
-                    Uri photoURI = Uri.fromFile(photoFile);
-
-                    Log.i("199", " " + erdem + " newUrı: " + newURI + " photoURI " + photoURI);
-                    takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, newURI);
+                    Uri photoURI = FileProvider.getUriForFile(view.getContext(),  BuildConfig.APPLICATION_ID + ".provider", photoFile);
+                    takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);
                 } else {
                     takePictureIntent = null;
-                    Log.i("205", "eeh null");
                 }
             }
 
@@ -275,8 +217,7 @@ public class MainActivity extends AppCompatActivity {
             chooserIntent.putExtra(Intent.EXTRA_TITLE, "Image Chooser");
             chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, intentArray);
             setResult(Activity.RESULT_OK, chooserIntent);
-            //startActivityForResult(chooserIntent, INPUT_FILE_REQUEST_CODE);
-            activityResultLauncher.launch(chooserIntent);
+            startActivityForResult(chooserIntent, INPUT_FILE_REQUEST_CODE);
 
             return true;
 
