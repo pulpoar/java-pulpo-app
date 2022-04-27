@@ -21,6 +21,7 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.FileProvider;
 
 import java.io.File;
 import java.io.IOException;
@@ -166,7 +167,6 @@ public class MainActivity extends AppCompatActivity {
         return;
     }
 
-
     public class ChromeClient extends WebChromeClient {
 
         // For Android 5.0
@@ -176,7 +176,6 @@ public class MainActivity extends AppCompatActivity {
                 mFilePathCallback.onReceiveValue(null);
             }
             mFilePathCallback = filePath;
-
             Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
             if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
                 // Create the File where the photo should go
@@ -191,11 +190,12 @@ public class MainActivity extends AppCompatActivity {
                     Log.e(TAG, "Unable to create Image File", ex);
                 }
 
-                // Continue only if the File was successfully created
+                // Continue only if the File was successfully created.
+                // Uri.fromFile is not supported to get camera photos starting SDK 30, use FileProvider instead.
                 if (photoFile != null) {
                     mCameraPhotoPath = "file:" + photoFile.getAbsolutePath();
-                    takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT,
-                            Uri.fromFile(photoFile));
+                    Uri photoURI = FileProvider.getUriForFile(view.getContext(),  BuildConfig.APPLICATION_ID + ".provider", photoFile);
+                    takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);
                 } else {
                     takePictureIntent = null;
                 }
@@ -216,7 +216,6 @@ public class MainActivity extends AppCompatActivity {
             chooserIntent.putExtra(Intent.EXTRA_INTENT, contentSelectionIntent);
             chooserIntent.putExtra(Intent.EXTRA_TITLE, "Image Chooser");
             chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, intentArray);
-
             startActivityForResult(chooserIntent, INPUT_FILE_REQUEST_CODE);
 
             return true;
